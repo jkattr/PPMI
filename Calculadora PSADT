@@ -1,70 +1,42 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Calculadora de PSA Doubling Time</title>
-	<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+	<title>Calculadora do tempo de duplicação do PSA</title>
 </head>
 <body>
-	<h1>Calculadora de PSA Doubling Time</h1>
-	<form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
-		<label for="psaInicial">PSA Inicial:</label>
-		<input type="number" id="psaInicial" name="psaInicial" required><br><br>
-		
-		<label for="psaFinal">PSA Final:</label>
-		<input type="number" id="psaFinal" name="psaFinal" required><br><br>
+	<h1>Calculadora do tempo de duplicação do PSA</h1>
 
-		<label for="dataInicial">Data do PSA Inicial:</label>
-		<input type="date" id="dataInicial" name="dataInicial" required><br><br>
-		
-		<label for="dataFinal">Data do PSA Final:</label>
-		<input type="date" id="dataFinal" name="dataFinal" required><br><br>
-		
-		<button type="submit" name="submit">Calcular</button>
+	<form>
+		<label for="psa1">PSA mais antigo:</label>
+		<input type="number" id="psa1" name="psa1" step="0.01"><br>
+
+		<label for="date1">Data do PSA mais antigo:</label>
+		<input type="date" id="date1" name="date1"><br>
+
+		<label for="psa2">PSA mais recente:</label>
+		<input type="number" id="psa2" name="psa2" step="0.01"><br>
+
+		<label for="date2">Data do PSA mais recente:</label>
+		<input type="date" id="date2" name="date2"><br>
+
+		<input type="button" value="Calcular" onclick="calculatePSADT()">
 	</form>
-	
-	<div id="plot"></div>
-	
-	<?php
-		if (isset($_POST['submit'])) {
-			$psaInicial = $_POST['psaInicial'];
-			$psaFinal = $_POST['psaFinal'];
-			$dataInicial = new DateTime($_POST['dataInicial']);
-			$dataFinal = new DateTime($_POST['dataFinal']);
-			
-			$tempo = $dataFinal->diff($dataInicial);
-			$tempoDias = $tempo->days;
-			$taxaCrescimento = log($psaFinal/$psaInicial)/$tempoDias;
-			$psaDoublingTime = log(2)/$taxaCrescimento;
-			
-			//Plotando o gráfico
-			$psaData = [];
-			$data = new DateTime($dataInicial->format('Y-m-d'));
-			for ($i = 0; $i <= $tempoDias; $i++) {
-				$psa = $psaInicial * exp($taxaCrescimento * $i / 365);
-				$psaData[] = ['x' => $data->format('Y-m-d'), 'y' => $psa];
-				$data->modify('+1 day');
-			}
-			
-			$trace1 = [
-			  'x' => array_column($psaData, 'x'),
-			  'y' => array_column($psaData, 'y'),
-			  'mode' => 'lines',
-			  'name' => 'PSA'
-			];
 
-			$data = [$trace1];
+	<div id="result"></div>
 
-			$layout = [
-			  'title' => 'Curva de Crescimento do PSA',
-			  'xaxis' => [
-			    'title' => 'Data'
-			  ],
-			  'yaxis' => [
-			    'title' => 'PSA (ng/mL)'
-			  ]
-			];
+	<script>
+		function calculatePSADT() {
+			var psa1 = parseFloat(document.getElementById("psa1").value);
+			var psa2 = parseFloat(document.getElementById("psa2").value);
+			var date1 = new Date(document.getElementById("date1").value);
+			var date2 = new Date(document.getElementById("date2").value);
+			var timeDiff = Math.abs(date2.getTime() - date1.getTime());
+			var diffMonths = Math.ceil(timeDiff / (1000 * 3600 * 24 * 30.4));
+			var growthRate = (psa2 - psa1) / diffMonths;
+			var psaDT = Math.log(2) / growthRate;
 
-			echo "<script>Plotly.newPlot('plot', " . json_encode($data) . ", " . json_encode($layout) . ");</script>";
-			
-			echo "<p>PSA Doubling Time: " . round($psaDoublingTime, 2) . " dias</p>";
+			document.getElementById("result").innerHTML = "O tempo de duplicação do PSA é de aproximadamente " + psaDT.toFixed(1) + " meses.";
 		}
+	</script>
+</body>
+</html>
