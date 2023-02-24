@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Calculadora de PSA Doubling Time</title>
+	<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+	<h1>Calculadora de PSA Doubling Time</h1>
+	<form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
+		<label for="psaInicial">PSA Inicial:</label>
+		<input type="number" id="psaInicial" name="psaInicial" required><br><br>
+		
+		<label for="psaFinal">PSA Final:</label>
+		<input type="number" id="psaFinal" name="psaFinal" required><br><br>
+
+		<label for="dataInicial">Data do PSA Inicial:</label>
+		<input type="date" id="dataInicial" name="dataInicial" required><br><br>
+		
+		<label for="dataFinal">Data do PSA Final:</label>
+		<input type="date" id="dataFinal" name="dataFinal" required><br><br>
+		
+		<button type="submit" name="submit">Calcular</button>
+	</form>
+	
+	<div id="plot"></div>
+	
+	<?php
+		if (isset($_POST['submit'])) {
+			$psaInicial = $_POST['psaInicial'];
+			$psaFinal = $_POST['psaFinal'];
+			$dataInicial = new DateTime($_POST['dataInicial']);
+			$dataFinal = new DateTime($_POST['dataFinal']);
+			
+			$tempo = $dataFinal->diff($dataInicial);
+			$tempoDias = $tempo->days;
+			$taxaCrescimento = log($psaFinal/$psaInicial)/$tempoDias;
+			$psaDoublingTime = log(2)/$taxaCrescimento;
+			
+			//Plotando o gráfico
+			$psaData = [];
+			$data = new DateTime($dataInicial->format('Y-m-d'));
+			for ($i = 0; $i <= $tempoDias; $i++) {
+				$psa = $psaInicial * exp($taxaCrescimento * $i / 365);
+				$psaData[] = ['x' => $data->format('Y-m-d'), 'y' => $psa];
+				$data->modify('+1 day');
+			}
+			
+			$trace1 = [
+			  'x' => array_column($psaData, 'x'),
+			  'y' => array_column($psaData, 'y'),
+			  'mode' => 'lines',
+			  'name' => 'PSA'
+			];
+
+			$data = [$trace1];
+
+			$layout = [
+			  'title' => 'Curva de Crescimento do PSA',
+			  'xaxis' => [
+			    'title' => 'Data'
+			  ],
+			  'yaxis' => [
+			    'title' => 'PSA (ng/mL)'
+			  ]
+			];
+
+			echo "<script>Plotly.newPlot('plot', " . json_encode($data) . ", " . json_encode($layout) . ");</script>";
+			
+			echo "<p>PSA Doubling Time: " . round($psaDoublingTime, 2) . " dias</p>";
+		}
