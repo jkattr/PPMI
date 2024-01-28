@@ -1,4 +1,4 @@
-# howai
+
 ## Calculadora de doubling-time PSA ##
 
 Inserir 1º valor de PSA (data do exame mais antigo)
